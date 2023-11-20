@@ -1,9 +1,9 @@
 package v1alpha1
 
 import (
+	"github.com/kubean-io/kubean-api/apis"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"kubean.io/api/apis"
 )
 
 // +genclient
@@ -25,11 +25,19 @@ type ClusterOperation struct {
 	Status Status `json:"status,omitempty"`
 }
 
-type ActionType string
+type (
+	ActionSource string
+	ActionType   string
+)
 
 const (
 	PlaybookActionType ActionType = "playbook"
 	ShellActionType    ActionType = "shell"
+)
+
+const (
+	BuiltinActionSource   ActionSource = "builtin"
+	ConfigMapActionSource ActionSource = "configmap"
 )
 
 // Spec defines the desired state of a member cluster.
@@ -42,27 +50,49 @@ type Spec struct {
 	HostsConfRef *apis.ConfigMapRef `json:"hostsConfRef"`
 	// VarsConfRef will be filled by operator when it performs backup.
 	// +optional
-	VarsConfRef *apis.ConfigMapRef `json:"varsConfRef"`
+	VarsConfRef *apis.ConfigMapRef `json:"varsConfRef,omitempty"`
 	// SSHAuthRef will be filled by operator when it performs backup.
 	// +optional
-	SSHAuthRef *apis.SecretRef `json:"sshAuthRef"`
+	SSHAuthRef *apis.SecretRef `json:"sshAuthRef,omitempty"`
 	// +optional
 	// EntrypointSHRef will be filled by operator when it renders entrypoint.sh.
-	EntrypointSHRef *apis.ConfigMapRef `json:"entrypointSHRef"`
+	EntrypointSHRef *apis.ConfigMapRef `json:"entrypointSHRef,omitempty"`
 	// +required
 	ActionType ActionType `json:"actionType"`
 	// +required
 	Action string `json:"action"`
 	// +optional
+	// +kubebuilder:default="builtin"
+	ActionSource *ActionSource `json:"actionSource"`
+	// +optional
+	ActionSourceRef *apis.ConfigMapRef `json:"actionSourceRef,omitempty"`
+	// +optional
 	ExtraArgs string `json:"extraArgs"`
-	// +required
-	BackoffLimit int `json:"backoffLimit"`
 	// +required
 	Image string `json:"image"`
 	// +optional
 	PreHook []HookAction `json:"preHook"`
 	// +optional
 	PostHook []HookAction `json:"postHook"`
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources"`
+	// +optional
+	ActiveDeadlineSeconds *int64 `json:"activeDeadlineSeconds,omitempty"`
+}
+
+func (spec *Spec) ConfigDataList() []*apis.ConfigMapRef {
+	result := []*apis.ConfigMapRef{spec.HostsConfRef, spec.VarsConfRef, spec.EntrypointSHRef, spec.ActionSourceRef}
+	for i := range spec.PreHook {
+		result = append(result, spec.PreHook[i].ActionSourceRef)
+	}
+	for i := range spec.PostHook {
+		result = append(result, spec.PostHook[i].ActionSourceRef)
+	}
+	return result
+}
+
+func (spec *Spec) SecretDataList() []*apis.SecretRef {
+	return []*apis.SecretRef{spec.SSHAuthRef}
 }
 
 type HookAction struct {
@@ -70,6 +100,11 @@ type HookAction struct {
 	ActionType ActionType `json:"actionType"`
 	// +required
 	Action string `json:"action"`
+	// +optional
+	// +kubebuilder:default="builtin"
+	ActionSource *ActionSource `json:"actionSource"`
+	// +optional
+	ActionSourceRef *apis.ConfigMapRef `json:"actionSourceRef,omitempty"`
 	// +optional
 	ExtraArgs string `json:"extraArgs"`
 }
@@ -80,7 +115,6 @@ const (
 	RunningStatus   OpsStatus = "Running"
 	SucceededStatus OpsStatus = "Succeeded"
 	FailedStatus    OpsStatus = "Failed"
-	BlockedStatus   OpsStatus = "Blocked"
 )
 
 // Status contains information about the current status of a
@@ -89,13 +123,13 @@ type Status struct {
 	// +optional
 	Action string `json:"action"`
 	// +optional
-	JobRef *apis.JobRef `json:"jobRef"`
+	JobRef *apis.JobRef `json:"jobRef,omitempty"`
 	// +optional
 	Status OpsStatus `json:"status"`
 	// +optional
-	StartTime *metav1.Time `json:"startTime"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
 	// +optional
-	EndTime *metav1.Time `json:"endTime"`
+	EndTime *metav1.Time `json:"endTime,omitempty"`
 	// Digest is used to avoid the change of clusterOps by others. it will be filled by operator. Do Not change this value.
 	// +optional
 	Digest string `json:"digest,omitempty"`

@@ -3,7 +3,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"kubean.io/api/apis"
+	"github.com/kubean-io/kubean-api/apis"
 )
 
 // +genclient
@@ -38,6 +38,16 @@ type Spec struct {
 	// SSHAuthRef stores ssh key and if it is empty ,then use sshpass.
 	// +optional
 	SSHAuthRef *apis.SecretRef `json:"sshAuthRef"`
+	// +optional
+	PreCheckRef *apis.ConfigMapRef `json:"preCheckRef"`
+}
+
+func (spec *Spec) ConfigDataList() []*apis.ConfigMapRef {
+	return []*apis.ConfigMapRef{spec.HostsConfRef, spec.VarsConfRef, spec.KubeConfRef, spec.PreCheckRef}
+}
+
+func (spec *Spec) SecretDataList() []*apis.SecretRef {
+	return []*apis.SecretRef{spec.SSHAuthRef}
 }
 
 type ClusterConditionType string
@@ -59,9 +69,9 @@ type ClusterCondition struct {
 	// +optional
 	Status ClusterConditionType `json:"status"`
 	// +optional
-	StartTime *metav1.Time `json:"startTime"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
 	// +optional
-	EndTime *metav1.Time `json:"endTime"`
+	EndTime *metav1.Time `json:"endTime,omitempty"`
 }
 
 // Status contains information about the current status of a

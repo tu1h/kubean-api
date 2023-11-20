@@ -41,9 +41,30 @@ type Spec struct {
 	Docker []*DockerInfo `json:"docker,omitempty"`
 }
 
+type ImageRepoPasswordAuth struct {
+	// +optional
+	ImageRepoAddress string `json:"imageRepoAddress" yaml:"imageRepoAddress"`
+	// +optional
+	UserName string `json:"userName" yaml:"userName"`
+	// +optional
+	PasswordBase64 string `json:"passwordBase64" yaml:"passwordBase64"`
+}
+
+type ImageRepoScheme string
+
+const (
+	HTTP  ImageRepoScheme = "http"
+	HTTPS ImageRepoScheme = "https"
+)
+
 type LocalService struct {
 	// +optional
-	ImageRepo map[ImageRepoType]string `json:"imageRepo" yaml:"imageRepo"`
+	ImageRepo map[ImageRepoType]string `json:"imageRepo,omitempty" yaml:"imageRepo,omitempty"`
+	// +optional
+	ImageRepoAuth []ImageRepoPasswordAuth `json:"imageRepoAuth,omitempty" yaml:"imageRepoAuth,omitempty"`
+	// +optional
+	// +kubebuilder:default="https"
+	ImageRepoScheme *ImageRepoScheme `json:"imageRepoScheme,omitempty" yaml:"imageRepoScheme,omitempty"`
 	// +optional
 	FilesRepo string `json:"filesRepo,omitempty" yaml:"filesRepo,omitempty"`
 	// +optional
@@ -61,11 +82,13 @@ func (localService *LocalService) GetGHCRImageRepo() string {
 
 type ImageRepoType string
 
-const KubeImageRepo ImageRepoType = "kubeImageRepo"
-const GCRImageRepo ImageRepoType = "gcrImageRepo"
-const GithubImageRepo ImageRepoType = "githubImageRepo"
-const DockerImageRepo ImageRepoType = "dockerImageRepo"
-const QuayImageRepo ImageRepoType = "quayImageRepo"
+const (
+	KubeImageRepo   ImageRepoType = "kubeImageRepo"
+	GCRImageRepo    ImageRepoType = "gcrImageRepo"
+	GithubImageRepo ImageRepoType = "githubImageRepo"
+	DockerImageRepo ImageRepoType = "dockerImageRepo"
+	QuayImageRepo   ImageRepoType = "quayImageRepo"
+)
 
 type HostsMap struct {
 	// +required

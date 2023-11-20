@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
+	kubeanv1alpha1 "github.com/kubean-io/kubean-api/generated/manifest/clientset/versioned/typed/manifest/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
-	kubeanv1alpha1 "kubean.io/api/generated/manifest/clientset/versioned/typed/manifest/v1alpha1"
 )
 
 type Interface interface {
@@ -17,8 +17,7 @@ type Interface interface {
 	KubeanV1alpha1() kubeanv1alpha1.KubeanV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	kubeanV1alpha1 *kubeanv1alpha1.KubeanV1alpha1Client
